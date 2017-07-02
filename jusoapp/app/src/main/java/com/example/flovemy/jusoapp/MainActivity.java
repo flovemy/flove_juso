@@ -25,8 +25,10 @@ import java.io.IOException;
 
 /**
  * Created by flovemy on 2017-06-26.
+ *
+ * 
+ *
  */
-
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,42 +36,46 @@ public class MainActivity extends AppCompatActivity {
     private Button searchButton;
     ListView listview;
     ListViewAdapter adapter;
-
     int count;
     View header;
+
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
-
+    //Main Thread에서 UI 갱신하기 위한 Runnable
     private Runnable updateUI = new Runnable() {
         public void run() {
             TextView countView = (TextView) header.findViewById(R.id.countView);
-            countView.setText(count+"");
+            countView.setText(count + "");
             MainActivity.this.adapter.notifyDataSetChanged();
 
         }
     };
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //커스텀 액션바 추가 부분
         try {
             getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
             getSupportActionBar().setCustomView(R.layout.title);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-        setContentView(R.layout.activity_main);
 
-        header = getLayoutInflater().inflate(R.layout.listview_header, null, false) ;
+        setContentView(R.layout.activity_main);
+        //리스트 뷰의 헤더부분
+        header = getLayoutInflater().inflate(R.layout.listview_header, null, false);
 
 
         this.editText = (EditText) findViewById(R.id.editText);
         this.searchButton = (Button) findViewById(R.id.button);
         this.listview = (ListView) findViewById(R.id.listview);
+
+        //리스브 뷰에 헤더를 추가한다.
         listview.addHeaderView(header);
 
+        //버튼에 이벤트 리스너를 추가한다.
         this.searchButton.setOnClickListener(btnClickListener);
 
     }
@@ -78,28 +84,28 @@ public class MainActivity extends AppCompatActivity {
     private View.OnClickListener btnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+
             String input = editText.getText().toString();
-
-
             adapter = new ListViewAdapter();
             listview.setAdapter(adapter);
-
-
-            if (input.isEmpty()||input.length()<2) {
+            if (input.isEmpty() || input.length() < 2) {
                 openSimpleAlertDialog("Error", "검색어를 두 글자 이상 입력해주세요.");
                 return;
             }
-
+            //DB서버로 주소를 요청 //비동기
             requestJuso();
-
-
-
-            InputMethodManager mInputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            mInputMethodManager.hideSoftInputFromWindow(editText.getWindowToken(), 0);
-            runOnUiThread(updateUI);
+            //키패드를 닫는다.
+            closeKeypad();
         }
     };
 
+    //키패드를 강제로 닫는 메소드
+    private void closeKeypad() {
+        InputMethodManager mInputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        mInputMethodManager.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+    }
+
+    //웹서버로 주소 정보를 요청 및 데이터를 리스트 뷰에 추가한다.
     private void requestJuso() {
         OkHttpClient client = new OkHttpClient();
 
@@ -108,13 +114,14 @@ public class MainActivity extends AppCompatActivity {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
+        //리퀘스트를 보내고 그 답신을 받아온다.
         client.newCall(request).enqueue(callbackGettingJuso);
-
-
-
     }
 
+    //웹서버와 연결하고 데이터 값을 받아오는 콜백 객체
     private Callback callbackGettingJuso = new Callback() {
+
+        //값을 가져오는데 실패
         @Override
         public void onFailure(Call call, IOException e) {
             openSimpleAlertDialogOnUiThread(
@@ -123,16 +130,18 @@ public class MainActivity extends AppCompatActivity {
             );
         }
 
+        //값을 가져오는데 성공
         @Override
         public void onResponse(Call call, Response response) throws IOException {
             final String strJsonOutput = response.body().string();
 
             try {
+                //제이슨 객체 생성
                 JSONObject jsonOutput = new JSONObject(strJsonOutput);
                 final JSONArray jsonArray = jsonOutput.getJSONObject("results").getJSONArray("juso");
-               count = jsonOutput.getJSONObject("results").getJSONObject("common").getInt("totalCount");
+                count = jsonOutput.getJSONObject("results").getJSONObject("common").getInt("totalCount");
 
-
+                //객체 숫자 만큼 리스트 뷰 어댑터에 추가
                 for (int i = 0; i < jsonArray.length(); i++) {
 
                     try {
@@ -142,14 +151,14 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
-
+                //비동기이기 때문에 메인쓰레드를 불러 UI를 갱신
+                runOnUiThread(updateUI);
 
             } catch (JSONException e) {
                 e.printStackTrace();
                 openSimpleAlertDialogOnUiThread("Error", "제이슨 값이 오지않았다. 없을리 없으니까 대충 씀.");
+
             }
-
-
         }
     };
 

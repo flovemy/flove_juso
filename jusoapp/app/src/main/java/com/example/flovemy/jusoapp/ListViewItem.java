@@ -2,6 +2,9 @@ package com.example.flovemy.jusoapp;
 
 /**
  * Created by flovemy on 2017-06-26.
+ *
+ * 리스트 뷰에 들어갈 아이템 객체를 정의한 클래스
+ *
  */
 
 public class ListViewItem {

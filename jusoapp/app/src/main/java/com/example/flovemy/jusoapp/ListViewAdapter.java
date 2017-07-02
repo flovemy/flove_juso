@@ -14,6 +14,9 @@ import java.util.ArrayList;
 
 /**
  * Created by flovemy on 2017-06-26.
+ *
+ * 리스트 뷰와 리스트 뷰 아이템 객체를 연결해줄 어댑터를 정의한 클래스
+ *
  */
 
 public class ListViewAdapter extends BaseAdapter {
