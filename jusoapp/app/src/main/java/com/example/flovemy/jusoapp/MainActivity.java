@@ -12,6 +12,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import okhttp3.*;
 
@@ -33,12 +34,18 @@ public class MainActivity extends AppCompatActivity {
     private Button searchButton;
     ListView listview;
     ListViewAdapter adapter;
+
+    int count;
+    View header;
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
 
     private Runnable updateUI = new Runnable() {
         public void run() {
+            TextView countView = (TextView) header.findViewById(R.id.countView);
+            countView.setText(count+"");
             MainActivity.this.adapter.notifyDataSetChanged();
+
         }
     };
 
@@ -55,12 +62,13 @@ public class MainActivity extends AppCompatActivity {
         }
         setContentView(R.layout.activity_main);
 
+        header = getLayoutInflater().inflate(R.layout.listview_header, null, false) ;
 
-        setContentView(R.layout.activity_main);
 
         this.editText = (EditText) findViewById(R.id.editText);
         this.searchButton = (Button) findViewById(R.id.button);
         this.listview = (ListView) findViewById(R.id.listview);
+        listview.addHeaderView(header);
 
         this.searchButton.setOnClickListener(btnClickListener);
 
@@ -77,16 +85,18 @@ public class MainActivity extends AppCompatActivity {
             listview.setAdapter(adapter);
 
 
-            if (input.isEmpty()) {
-                openSimpleAlertDialog("Error", "검색어를 입력해주세요.");
+            if (input.isEmpty()||input.length()<2) {
+                openSimpleAlertDialog("Error", "검색어를 두 글자 이상 입력해주세요.");
                 return;
             }
 
             requestJuso();
 
-            runOnUiThread(updateUI);
+
+
             InputMethodManager mInputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             mInputMethodManager.hideSoftInputFromWindow(editText.getWindowToken(), 0);
+            runOnUiThread(updateUI);
         }
     };
 
@@ -99,6 +109,9 @@ public class MainActivity extends AppCompatActivity {
                 .url(url)
                 .build();
         client.newCall(request).enqueue(callbackGettingJuso);
+
+
+
     }
 
     private Callback callbackGettingJuso = new Callback() {
@@ -117,6 +130,9 @@ public class MainActivity extends AppCompatActivity {
             try {
                 JSONObject jsonOutput = new JSONObject(strJsonOutput);
                 final JSONArray jsonArray = jsonOutput.getJSONObject("results").getJSONArray("juso");
+               count = jsonOutput.getJSONObject("results").getJSONObject("common").getInt("totalCount");
+
+
                 for (int i = 0; i < jsonArray.length(); i++) {
 
                     try {

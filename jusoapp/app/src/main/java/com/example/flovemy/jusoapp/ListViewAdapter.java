@@ -70,6 +70,7 @@ public class ListViewAdapter extends BaseAdapter {
     }
 
 
+
     public void addItem(JSONObject json) {
         ListViewItem item = new ListViewItem();
 
