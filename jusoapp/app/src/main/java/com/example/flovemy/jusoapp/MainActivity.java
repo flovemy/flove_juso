@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AbsListView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -25,9 +26,6 @@ import java.io.IOException;
 
 /**
  * Created by flovemy on 2017-06-26.
- *
- * 
- *
  */
 
 public class MainActivity extends AppCompatActivity {
@@ -37,14 +35,15 @@ public class MainActivity extends AppCompatActivity {
     ListView listview;
     ListViewAdapter adapter;
     int count;
-    View header;
+    int pageIndex = 1;
+    boolean lastItemVisibleFlag = false;
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     //Main Thread에서 UI 갱신하기 위한 Runnable
     private Runnable updateUI = new Runnable() {
         public void run() {
-            TextView countView = (TextView) header.findViewById(R.id.countView);
+            TextView countView = (TextView) findViewById(R.id.countView);
             countView.setText(count + "");
             MainActivity.this.adapter.notifyDataSetChanged();
 
@@ -64,27 +63,39 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setContentView(R.layout.activity_main);
-        //리스트 뷰의 헤더부분
-        header = getLayoutInflater().inflate(R.layout.listview_header, null, false);
-
 
         this.editText = (EditText) findViewById(R.id.editText);
         this.searchButton = (Button) findViewById(R.id.button);
         this.listview = (ListView) findViewById(R.id.listview);
 
-        //리스브 뷰에 헤더를 추가한다.
-        listview.addHeaderView(header);
 
         //버튼에 이벤트 리스너를 추가한다.
-        this.searchButton.setOnClickListener(btnClickListener);
+        searchButton.setOnClickListener(btnClickListener);
 
+        //리스트뷰에 스크롤 리스너를 추가한다.
+        listview.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                //사용자가 스크롤링을 멈추고 Flag가 트루일경우 = 리스트 마지막 아이템을 보고있을때
+                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE && lastItemVisibleFlag) {
+
+                    requestJuso();
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                //리스트의 마지막인지 아닌지 확인한다.
+                lastItemVisibleFlag = (totalItemCount > 0) && (firstVisibleItem + visibleItemCount >= totalItemCount);
+            }
+        });
     }
 
 
     private View.OnClickListener btnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-
+            pageIndex = 1;
             String input = editText.getText().toString();
             adapter = new ListViewAdapter();
             listview.setAdapter(adapter);
@@ -108,9 +119,9 @@ public class MainActivity extends AppCompatActivity {
     //웹서버로 주소 정보를 요청 및 데이터를 리스트 뷰에 추가한다.
     private void requestJuso() {
         OkHttpClient client = new OkHttpClient();
-
         String url = "http://203.238.58.74:8983/app/search/addrSearchApi.do?";
-        url = url + "keyword=" + editText.getText().toString() + "&resultType=json";
+        url = url + "keyword=" + editText.getText().toString() + "&resultType=json&currentPage=" + pageIndex++;
+
         Request request = new Request.Builder()
                 .url(url)
                 .build();
@@ -154,6 +165,7 @@ public class MainActivity extends AppCompatActivity {
                 //비동기이기 때문에 메인쓰레드를 불러 UI를 갱신
                 runOnUiThread(updateUI);
 
+
             } catch (JSONException e) {
                 e.printStackTrace();
                 openSimpleAlertDialogOnUiThread("Error", "제이슨 값이 오지않았다. 없을리 없으니까 대충 씀.");
@@ -162,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    //경고알람을 띄우는 메소드
     private void openSimpleAlertDialog(String title, String message) {
         new AlertDialog.Builder(this)
                 .setTitle(title)
@@ -175,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
+    //경고 알림시 실시간으로 화면 생신
     private void openSimpleAlertDialogOnUiThread(final String title, final String message) {
         runOnUiThread(new Runnable() {
             @Override

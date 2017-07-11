@@ -13,7 +13,7 @@
         android:paddingLeft="16dp"
         android:text="검색결과"
         android:textColor="#FFFFFF"
-        android:textSize="30dp" />
+        android:textSize="24dp" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -29,7 +29,7 @@
             android:layout_weight="0.5"
             android:text="count"
             android:textColor="#FFFFFF"
-            android:textSize="16dp" />
+            android:textSize="12dp" />
 
         <TextView
             android:id="@+id/countView"
@@ -38,7 +38,7 @@
             android:layout_weight="0.5"
             android:text="0"
             android:textColor="#FFFFFF"
-            android:textSize="16dp" />
+            android:textSize="12dp" />
 
     </LinearLayout>
 </LinearLayout>
